@@ -39,6 +39,7 @@ const UserSchema = mongoose.Schema({
     type: String
   },
   friends:[],
+  requests:[],
   handle: String,
   available: {
       type: Boolean,

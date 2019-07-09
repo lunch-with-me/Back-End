@@ -97,9 +97,118 @@ router.get('/profile', passport.authenticate("jwt", {session: false}), (req, res
   res.json(response);
 });
 
-// user list
-router.get('/',  (req, res, next) => {
+router.post('/registerdetails',function(req, res){
+  console.log("apu data 0 - - - "+JSON.stringify(req.body))
+
+  var newdata = {
+          fullname: req.body.fullname,
+          gender: req.body.gender,
+          date_of_birth:req.body.date_of_birth,
+          message: req.body.message,
+          telephone:req.body.telephone,
+          profession:req.body.profession,
+          image:req.body.image,
+          creation_dt: Date.now()
+  }
+
+  User.updateOne({email:req.body.email},newdata,{upsert: true}).then(doc=>{
+    console.log("succss - "+JSON.stringify(doc))
+    return res.status(201).json(doc);
+  })     
+})
+
+router.get('/all',  (req, res, next) => {
   User.getUsers()
+    .then(users => {
+      let response = {
+        success: true,
+        users: users
+      };
+      return res.json(response);
+    })
+    .catch(err => {
+      log.err('mongo', 'failed to get users', err.message || err);
+      return next(new Error('Failed to get users'));
+    });
+});
+
+router.get('/accept/:id/:username',  passport.authenticate('jwt', { session: false }), (req, res, next) => {
+  User.update({_id: req.user.id}, { $pull: { "requests": {
+      username: req.params.username
+  } } }).then(users => {
+    let response = {
+      success: true,
+      users: users
+    };
+    console.log(response);
+  })
+  User.update({_id: req.params.id}, { $push: { "friends": {
+      _id: req.user.id,
+      username: req.user.username
+  } } })
+    .then(users => {
+      let response = {
+        success: true,
+        users: users
+      };
+      return res.json(response);
+    })
+    .catch(err => {
+      log.err('mongo', 'failed to get users', err.message || err);
+      return next(new Error('Failed to get users'));
+    });
+  User.update({_id: req.user.id}, { $push: { "friends": {
+      _id: req.params.id,
+      username: req.params.username
+  } } })
+    .then(users => {
+      let response = {
+        success: true,
+        users: users
+      };
+      return res.json(response);
+    })
+    .catch(err => {
+      log.err('mongo', 'failed to get users', err.message || err);
+      return next(new Error('Failed to get users'));
+    });
+});
+
+router.get('/request/:id/:username',  passport.authenticate('jwt', { session: false }), (req, res, next) => {
+  User.update({_id: req.params.id}, { $pull: { "requests": {
+      _id: req.user.id,
+      username: req.user.username
+  } } }).then(users => {
+    let response = {
+      success: true,
+      users: users
+    };
+    console.log(response);
+  })
+  .catch(err => {
+    log.err('mongo', 'failed to get users', err.message || err);
+    return next(new Error('Failed to get users'));
+  });
+  User.update({_id: req.params.id}, { $push: { "requests": {
+    _id: req.user.id,
+    username: req.user.username
+  } } })
+    .then(users => {
+      let response = {
+        success: true,
+        users: users
+      };
+      return res.json(response);
+    })
+    .catch(err => {
+      log.err('mongo', 'failed to get users', err.message || err);
+      return next(new Error('Failed to get users'));
+    });
+});
+
+// user list
+router.get('/',  passport.authenticate('jwt', { session: false }), (req, res, next) => {
+  User.find({_id: req.user.id})
     .then(users => {
       let response = {
         success: true,
